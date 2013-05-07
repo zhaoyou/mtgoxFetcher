@@ -1,0 +1,4 @@
+mtgoxFetcher
+============
+
+fetch mtgox trade
