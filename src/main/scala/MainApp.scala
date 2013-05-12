@@ -6,6 +6,6 @@ object MainApp {
   def main(args: Array[String]) {
     // DispatchExample.run
     TradesFetchApp.run
-    Thread.sleep(5000)
+    Thread.sleep(20000)
   }
 }
