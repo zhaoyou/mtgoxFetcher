@@ -1,3 +1,4 @@
+import AssemblyKeys._
 
 scalaVersion := "2.10.0"
 
@@ -8,4 +9,6 @@ libraryDependencies ++= Seq(
   "org.mongodb" % "casbah_2.10" % "2.6.0"
 )
 
+net.virtualvoid.sbt.graph.Plugin.graphSettings
 
+assemblySettings

@@ -6,13 +6,12 @@ import net.liftweb.json._
 
 object TradesFetchApp {
 
-  def run() {
+  def getData() = {
     val http = new Http()
-    val u = url("https://data.mtgox.com/api/1/BTCUSD/trades/fetch?since=0")
+    val u = url("https://data.mtgox.com/api/1/BTCUSD/trades/fetch?since=%d" format getMaxTid)
     val x = http(u OK as.String)
     for(str <- x) {
       val jlist = parse(str)
-     // println((jlist \ "return")(0))
       val a =  (for { JObject(t) <- (jlist \ "return")
             JField("tid", JString(tid)) <- t
             JField("date", JInt(date)) <- t
@@ -27,7 +26,7 @@ object TradesFetchApp {
             JField("properties", JString(properties)) <- t
 
           } yield (
-            MongoDBObject("tid" -> tid,
+            MongoDBObject("tid" -> tid.toLong,
                           "date" -> date.toLong,
                           "price" -> price,
                           "amount" -> amount,
@@ -43,7 +42,10 @@ object TradesFetchApp {
       println("insert data to mongodb success!")
       //println(jlist)
     }
+  }
 
+  def run() {
+    getData
   }
 
   def insertData(data: List[DBObject]) = {
@@ -51,12 +53,11 @@ object TradesFetchApp {
     data foreach { coll.insert(_)}
   }
 
-  // get gtmox trans full, since tid.
-  def gtmoxUrl(tid: Long) =
-    "http://data.mtgox.com/api/1/BTCUSD/trades/fetch?since=%d" format tid
-
-  def trades(path: String) = {
-    Http(url(path) OK as.String)
+  def getMaxTid = {
+    val coll = MongoClient("localhost")("mtgox")("trades")
+    coll.find().sort(MongoDBObject("tid" -> -1)).limit(1).toList.headOption match {
+      case Some(x) => x.as[Long]("tid")
+      case _ => 0
+    }
   }
-
 }
