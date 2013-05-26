@@ -44,13 +44,58 @@ object TradesFetchApp {
     }
   }
 
+  def getLatestTrades() = {
+    val http = new Http()
+    val u = url("http://data.mtgox.com/api/2/BTCUSD/money/trades/fetch")
+    val x = http(u OK as.String)
+    for(str <- x) {
+      val jlist = parse(str)
+      val a =  (for { JObject(t) <- (jlist \ "data")
+            JField("tid", JString(tid)) <- t
+            JField("date", JInt(date)) <- t
+            JField("price", JString(price)) <- t
+            JField("amount", JString(amount)) <- t
+            JField("price_int", JString(price_int)) <- t
+            JField("amount_int", JString(amount_int)) <- t
+            JField("price_currency", JString(price_currency)) <- t
+            JField("item", JString(item)) <- t
+            JField("trade_type", JString(trade_type)) <- t
+            JField("primary", JString(primary)) <- t
+            JField("properties", JString(properties)) <- t
+
+          } yield (
+            MongoDBObject("_id" -> tid.toLong,
+                          "date" -> date.toLong,
+                          "price" -> price,
+                          "amount" -> amount,
+                          "price_int" -> price_int,
+                          "amount_int" -> amount_int,
+                          "price_currency" -> price_currency,
+                          "item" -> item,
+                          "trade_type" -> trade_type,
+                          "primary" -> primary,
+                          "properties" -> properties)
+          )).toList
+      saveData(a)
+      println("save data to mongodb success!")
+      //println(jlist)
+    }
+
+  }
+
   def run() {
-    getData
+    //getData
+    getLatestTrades
   }
 
   def insertData(data: List[DBObject]) = {
     val coll = MongoClient("localhost")("mtgox")("trades")
     data foreach { coll.insert(_)}
+  }
+
+  def saveData(data: List[DBObject]) = {
+    val coll = MongoClient("localhost")("mtgox")("trades2")
+    data foreach { coll.save(_)}
   }
 
   def getMaxTid = {
